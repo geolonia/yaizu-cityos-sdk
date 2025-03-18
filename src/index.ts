@@ -43,6 +43,9 @@ class YaizuMap extends maplibregl.Map {
     super({...defaults, ...params});
   }
 
+  /* **************
+   * データのロード
+   * **************/ 
   loadData(className: string) {
     Object.keys(LAYER_GEOMETRY_TYPES).forEach((key) => {
       const layerId = `${className}-${key}`;
@@ -69,7 +72,7 @@ class YaizuMap extends maplibregl.Map {
         },
         properties: d
       }))
-    }
+    } as GeoJSON.FeatureCollection;
 
     this.addSource(url, {
       type: 'geojson',
