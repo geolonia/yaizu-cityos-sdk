@@ -11,14 +11,14 @@ declare global {
   }
 }
 
-class TakamatsuMap extends maplibregl.Map {
+class YaizuMap extends maplibregl.Map {
 
   constructor(params: any) {
 
     const defaults = {
       container: 'map',
       style: style,
-      center: [134.04654783784918, 34.34283588989655],
+      center: [138.29294, 34.84363],
       zoom: 12,
       transformRequest: (url: string, resourceType: string) => {
 
@@ -128,7 +128,7 @@ const currentScript = document.currentScript as HTMLScriptElement;
 
 window.city = {}
 window.city.apiKey = parseApiKey(currentScript);
-window.city.Takamatsu = maplibregl
-window.city.Takamatsu.Map = TakamatsuMap
-window.city.Takamatsu.Popup = maplibregl.Popup;
+window.city.Yaizu = maplibregl
+window.city.Yaizu.Map = YaizuMap
+window.city.Yaizu.Popup = maplibregl.Popup;
 
