@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CityOS 高松</title>
+  <title>CityOS 焼津</title>
   <style type="text/css">
     html,
     body,
@@ -18,14 +18,14 @@
     .popup-table {
       border-collapse: collapse;
       width: 100%;
-      table-layout: fixed
+      table-layout: fixed;
     }
 
     .popup-table th,
     .popup-table td {
       border: 1px solid #ddd;
       text-align: left;
-      padding: 8px;
+      padding: 4px;
       overflow-wrap: break-word;
     }
 
@@ -34,7 +34,10 @@
     }
 
     .maplibregl-popup-content {
-      overflow: auto;
+      max-height: 300px;
+      overflow-y: auto;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.3) !important;
+      border-radius: 8px !important;
     }
   </style>
 </head>
@@ -43,21 +46,39 @@
   <div id="map"></div>
   <script src="./index.js"></script>
   <script type="application/javascript">
-    const myCity = new city.Takamatsu.Map();
+    const yaizuCity = new city.Yaizu.Map();
 
-    myCity.on('load', () => {
-      myCity.loadData('商業地域', {
-        'fill-color': '#FFFF00',
-      })
-      myCity.loadData('第一種低層住居専用地域')
-      myCity.loadData('第二種低層住居専用地域')
+    yaizuCity.on('load', () => {
+      // ① データを表示する
+      //【line】「行政区域界」をデフォルトの色で表示
+      yaizuCity.loadData('行政区域界');
 
-      const url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRpQCIbBDkpOTxE0GvGZ6n-L6cp20tqSv-2bz_tcFMa1H42s8RITKcwk-aDs3T1pAipzxI4fXG9klZ5/pub?gid=1842161479&single=true&output=csv'
-      myCity.loadCSV(url)
+      //【polygon】「内水浸水想定区域(公共下水道区域内)」を表示
+      yaizuCity.loadData('防災/内水浸水想定区域(公共下水道区域内)');
 
-      myCity.on('click', url, (e) => {
-        const coordinates = e.features[0].geometry.coordinates.slice();
-        const properties = e.features[0].properties;
+      //【point】「リサイクル拠点」を表示
+      yaizuCity.loadData('ごみ・リサイクル/リサイクル拠点');
+
+      //【symbol】「お食事」を表示
+      yaizuCity.loadData('観光・イベント/お食事');
+      
+      //【polygon】「埋蔵文化財」を#ff7f50の色で表示
+      yaizuCity.loadData('文化・スポーツ/埋蔵文化財', {
+        'fill': '#ff7f50'
+      });
+
+      // ② csvファイルからポイントデータを読み込む
+      const url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT947C0AqmHlg9LO3edo4hrPeNZeTpNnuTo-hR4b-1AKBt0Uhk149T9spMrFriTdwFN7CetuWNUHFPR/pub?output=csv';
+      yaizuCity.loadPointCSV(url, 'AED設置場所');
+
+      // ③ ポップアップを表示する
+      yaizuCity.on('click', (e) => {
+        const features = yaizuCity.queryRenderedFeatures(e.point).filter((feature) => {
+          return feature.layer.id.includes('AED設置場所') || feature.layer.id.includes('リサイクル拠点') || feature.layer.id.includes('お食事');
+        });
+        if (features.length === 0) { return; }
+        const coordinates = e.lngLat;
+        const properties = features[0].properties;
 
         let tableHTML = "<table class='popup-table'>";
         tableHTML += "<tr><th>属性</th><th>値</th></tr>"; // ヘッダー行を追加
@@ -66,13 +87,12 @@
         }
         tableHTML += "</table>";
 
-        new city.Takamatsu.Popup({
-          maxWidth: '300px'
-        })
+        new city.Yaizu.Popup({ maxWidth: '300px' })
           .setLngLat(coordinates)
           .setHTML(tableHTML)
-          .addTo(myCity);
+          .addTo(yaizuCity);
       });
+
     })
   </script>
 </body>

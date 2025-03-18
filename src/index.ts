@@ -74,10 +74,10 @@ class YaizuMap extends maplibregl.Map {
     });
   }
 
-  private convertStyleProp(
-    geometryType: keyof typeof LAYER_TYPES, 
-    prop: string
-  ): string | undefined {
+  /* **************
+   * シンプルスタイルを変換
+   * **************/ 
+  private convertStyleProp(geometryType: keyof typeof LAYER_TYPES, prop: string): string | undefined {
     // "stroke" に対する処理
     if (prop === 'stroke') {
       if (geometryType === 'point') {
@@ -117,7 +117,10 @@ class YaizuMap extends maplibregl.Map {
     return undefined;
   }
 
-  async loadCSV(url: string) {
+  /* **************
+   * pointデータのcsvをロード
+   * **************/ 
+  async loadPointCSV(url: string, layerName: string, color?: string) {
     // Fetch the csv from the url
     const res = await fetch(url);
     const csv = await res.text();
@@ -144,12 +147,12 @@ class YaizuMap extends maplibregl.Map {
 
     // Add the geojson as layer to the map
     this.addLayer({
-      id: url,
+      id: layerName,
       type: 'circle',
       source: url,
       paint: {
         'circle-radius': 9,
-        'circle-color': '#FF0000',
+        'circle-color': color || '#4169e1',
         'circle-opacity': 0.5,
       }
     }, 'poi');
@@ -160,9 +163,7 @@ class YaizuMap extends maplibregl.Map {
       "source": url,
       "layout": {
         'text-field': "{名称}",
-        "text-font": [
-          "Noto Sans CJK JP Bold"
-        ],
+        "text-font": ["NotoSansJP-Regular"],
         'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
         'text-radial-offset': 0.5,
         'text-justify': 'auto',

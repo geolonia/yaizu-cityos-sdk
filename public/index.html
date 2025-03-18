@@ -18,14 +18,14 @@
     .popup-table {
       border-collapse: collapse;
       width: 100%;
-      table-layout: fixed
+      table-layout: fixed;
     }
 
     .popup-table th,
     .popup-table td {
       border: 1px solid #ddd;
       text-align: left;
-      padding: 8px;
+      padding: 4px;
       overflow-wrap: break-word;
     }
 
@@ -34,7 +34,10 @@
     }
 
     .maplibregl-popup-content {
-      overflow: auto;
+      max-height: 300px;
+      overflow-y: auto;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.3) !important;
+      border-radius: 8px !important;
     }
   </style>
 </head>
@@ -46,14 +49,15 @@
     const yaizuCity = new city.Yaizu.Map();
 
     yaizuCity.on('load', () => {
+      // ① データを表示する
       //【line】「行政区域界」をデフォルトの色で表示
       yaizuCity.loadData('行政区域界');
 
       //【polygon】「内水浸水想定区域(公共下水道区域内)」を表示
       yaizuCity.loadData('防災/内水浸水想定区域(公共下水道区域内)');
 
-      //【point】「農業用施設図」を表示
-      yaizuCity.loadData('農業/農業用施設図/農業用施設図');
+      //【point】「リサイクル拠点」を表示
+      yaizuCity.loadData('ごみ・リサイクル/リサイクル拠点');
 
       //【symbol】「お食事」を表示
       yaizuCity.loadData('観光・イベント/お食事');
@@ -61,6 +65,32 @@
       //【polygon】「埋蔵文化財」を#ff7f50の色で表示
       yaizuCity.loadData('文化・スポーツ/埋蔵文化財', {
         'fill': '#ff7f50'
+      });
+
+      // ② csvファイルからポイントデータを読み込む
+      const url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT947C0AqmHlg9LO3edo4hrPeNZeTpNnuTo-hR4b-1AKBt0Uhk149T9spMrFriTdwFN7CetuWNUHFPR/pub?output=csv';
+      yaizuCity.loadPointCSV(url, 'AED設置場所');
+
+      // ③ ポップアップを表示する
+      yaizuCity.on('click', (e) => {
+        const features = yaizuCity.queryRenderedFeatures(e.point).filter((feature) => {
+          return feature.layer.id.includes('AED設置場所') || feature.layer.id.includes('リサイクル拠点') || feature.layer.id.includes('お食事');
+        });
+        if (features.length === 0) { return; }
+        const coordinates = e.lngLat;
+        const properties = features[0].properties;
+
+        let tableHTML = "<table class='popup-table'>";
+        tableHTML += "<tr><th>属性</th><th>値</th></tr>"; // ヘッダー行を追加
+        for (let key in properties) {
+          tableHTML += `<tr><td>${key}</td><td>${properties[key]}</td></tr>`;
+        }
+        tableHTML += "</table>";
+
+        new city.Yaizu.Popup({ maxWidth: '300px' })
+          .setLngLat(coordinates)
+          .setHTML(tableHTML)
+          .addTo(yaizuCity);
       });
 
     })
