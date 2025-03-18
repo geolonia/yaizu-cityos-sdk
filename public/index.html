@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CityOS 高松</title>
+  <title>CityOS 焼津</title>
   <style type="text/css">
     html,
     body,
@@ -43,7 +43,7 @@
   <div id="map"></div>
   <script src="./index.js"></script>
   <script type="application/javascript">
-    const myCity = new city.Takamatsu.Map();
+    const myCity = new city.Yaizu.Map();
 
     myCity.on('load', () => {
       myCity.loadData('商業地域', {
@@ -66,7 +66,7 @@
         }
         tableHTML += "</table>";
 
-        new city.Takamatsu.Popup({
+        new city.Yaizu.Popup({
           maxWidth: '300px'
         })
           .setLngLat(coordinates)
