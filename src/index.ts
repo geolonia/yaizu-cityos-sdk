@@ -11,6 +11,14 @@ declare global {
   }
 }
 
+const LAYER_GEOMETRY_TYPES = {
+  point: 'Point',
+  line: 'LineString',
+  polygon: 'Polygon',
+  polygonOutline: 'Polygon-outline',
+  label: 'Label'
+};
+
 class YaizuMap extends maplibregl.Map {
 
   constructor(params: any) {
@@ -35,10 +43,12 @@ class YaizuMap extends maplibregl.Map {
     super({...defaults, ...params});
   }
 
-  loadData(className: string, paint: any | undefined | null, layout: any | undefined | null) {
-    console.log(this.getLayer(className));
-    if (!this.getLayer(className)) { return; }
-    this.setLayoutProperty(className, 'visibility', 'visible');
+  loadData(className: string) {
+    Object.keys(LAYER_GEOMETRY_TYPES).forEach((key) => {
+      const layerId = `${className}-${key}`;
+      if (!this.getLayer(layerId)) { return; }
+      this.setLayoutProperty(layerId, 'visibility', 'visible');
+    });
   }
 
   async loadCSV(url: string) {
@@ -111,4 +121,3 @@ window.city.apiKey = parseApiKey(currentScript);
 window.city.Yaizu = maplibregl
 window.city.Yaizu.Map = YaizuMap
 window.city.Yaizu.Popup = maplibregl.Popup;
-
