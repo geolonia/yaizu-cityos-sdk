@@ -1,3 +1,3 @@
 # Yaizu Maps SDK
 
-https://geolonia.github.io/cityos-sdk/index.js
+https://geolonia.github.io/yaizu-cityos-sdk/index.js
