@@ -43,36 +43,26 @@
   <div id="map"></div>
   <script src="./index.js"></script>
   <script type="application/javascript">
-    const myCity = new city.Yaizu.Map();
+    const yaizuCity = new city.Yaizu.Map();
 
-    myCity.on('load', () => {
-      myCity.loadData('商業地域', {
-        'fill-color': '#FFFF00',
-      })
-      myCity.loadData('第一種低層住居専用地域')
-      myCity.loadData('第二種低層住居専用地域')
+    yaizuCity.on('load', () => {
+      //【line】「行政区域界」をデフォルトの色で表示
+      yaizuCity.loadData('行政区域界');
 
-      const url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRpQCIbBDkpOTxE0GvGZ6n-L6cp20tqSv-2bz_tcFMa1H42s8RITKcwk-aDs3T1pAipzxI4fXG9klZ5/pub?gid=1842161479&single=true&output=csv'
-      myCity.loadCSV(url)
+      //【polygon】「内水浸水想定区域(公共下水道区域内)」を表示
+      yaizuCity.loadData('防災/内水浸水想定区域(公共下水道区域内)');
 
-      myCity.on('click', url, (e) => {
-        const coordinates = e.features[0].geometry.coordinates.slice();
-        const properties = e.features[0].properties;
+      //【point】「農業用施設図」を表示
+      yaizuCity.loadData('農業/農業用施設図/農業用施設図');
 
-        let tableHTML = "<table class='popup-table'>";
-        tableHTML += "<tr><th>属性</th><th>値</th></tr>"; // ヘッダー行を追加
-        for (let key in properties) {
-          tableHTML += `<tr><td>${key}</td><td>${properties[key]}</td></tr>`;
-        }
-        tableHTML += "</table>";
-
-        new city.Yaizu.Popup({
-          maxWidth: '300px'
-        })
-          .setLngLat(coordinates)
-          .setHTML(tableHTML)
-          .addTo(myCity);
+      //【symbol】「お食事」を表示
+      yaizuCity.loadData('観光・イベント/お食事');
+      
+      //【polygon】「埋蔵文化財」を#ff7f50の色で表示
+      yaizuCity.loadData('文化・スポーツ/埋蔵文化財', {
+        'fill': '#ff7f50'
       });
+
     })
   </script>
 </body>

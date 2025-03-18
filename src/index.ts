@@ -11,13 +11,23 @@ declare global {
   }
 }
 
-const LAYER_GEOMETRY_TYPES = {
+const LAYER_TYPES = {
   point: 'Point',
   line: 'LineString',
   polygon: 'Polygon',
   polygonOutline: 'Polygon-outline',
-  label: 'Label'
+  symbol: 'Symbol',
+  label: 'Label',
 };
+
+export type simpleStyle = { 
+  'fill'?: string;
+  'stroke'?: string, 
+  'marker-color'?: string, 
+  'stroke-width': number,
+  'marker-symbol'?: string,
+  'marker-size'?: number
+}
 
 class YaizuMap extends maplibregl.Map {
 
@@ -46,12 +56,65 @@ class YaizuMap extends maplibregl.Map {
   /* **************
    * データのロード
    * **************/ 
-  loadData(className: string) {
-    Object.keys(LAYER_GEOMETRY_TYPES).forEach((key) => {
-      const layerId = `${className}-${key}`;
+  loadData(className: string, options?: simpleStyle) {
+    Object.keys(LAYER_TYPES).forEach((layerType) => {
+      const typedKey = layerType as keyof typeof LAYER_TYPES;
+      const layerId = `${className}-${LAYER_TYPES[typedKey]}`;
+
       if (!this.getLayer(layerId)) { return; }
+      if (options) {
+        Object.entries(options).forEach(([prop, value]) => {
+          if (!value) { return; }
+          const mappedProp = this.convertStyleProp(typedKey, prop);
+          if(!mappedProp) { return; }
+          this.setPaintProperty(layerId, mappedProp, value);
+        });
+      }
       this.setLayoutProperty(layerId, 'visibility', 'visible');
     });
+  }
+
+  private convertStyleProp(
+    geometryType: keyof typeof LAYER_TYPES, 
+    prop: string
+  ): string | undefined {
+    // "stroke" に対する処理
+    if (prop === 'stroke') {
+      if (geometryType === 'point') {
+        return 'circle-stroke-color';
+      } else if (geometryType === 'line') {
+        return 'line-color';
+      } else if (geometryType === 'polygon' || geometryType === 'polygonOutline') {
+        return 'fill-outline-color';
+      }
+      return undefined;
+    }
+  
+    // "stroke-width" に対する処理
+    if (prop === 'stroke-width') {
+      if (geometryType === 'point') {
+        return 'circle-stroke-width';
+      } else if (geometryType === 'line') {
+        return 'line-width';
+      } else if (geometryType === 'polygon' || geometryType === 'polygonOutline') {
+        return 'fill-outline-width';
+      }
+      return undefined;
+    }
+  
+    // その他のプロパティの変換
+    const mapping: Record<string, { mapped: string, layers: (keyof typeof LAYER_TYPES)[] }> = {
+      'fill':         { mapped: 'fill-color',    layers: ['polygon'] },
+      'marker-color': { mapped: 'icon-color',    layers: ['point'] },
+      'marker-symbol':{ mapped: 'icon-symbol',   layers: ['symbol'] },
+      'marker-size':  { mapped: 'icon-size',     layers: ['symbol'] }
+    };
+    
+    const entry = mapping[prop];
+    if (entry && entry.layers.includes(geometryType)) {
+      return entry.mapped;
+    }
+    return undefined;
   }
 
   async loadCSV(url: string) {
