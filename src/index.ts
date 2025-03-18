@@ -7,7 +7,7 @@ import style from './style.json'
 
 declare global {
   interface Window {
-      city: any;
+    city: any;
   }
 }
 
@@ -21,16 +21,13 @@ class YaizuMap extends maplibregl.Map {
       center: [138.29294, 34.84363],
       zoom: 12,
       transformRequest: (url: string, resourceType: string) => {
-
-        if (!window.city.apiKey) {
-          return { url };
-        }
+        if (!window.city.apiKey) { return { url }; }
 
         if ((resourceType === 'Tile' || resourceType === 'Source') && url.startsWith('https://tileserver.geolonia.com')) {
           const updatedUrl = url.replace('YOUR-API-KEY', window.city.apiKey);
-
           return { url: updatedUrl };
         }
+
         return { url };
       }
     }
@@ -39,26 +36,9 @@ class YaizuMap extends maplibregl.Map {
   }
 
   loadData(className: string, paint: any | undefined | null, layout: any | undefined | null) {
-    const paintDefault = {
-      'fill-color': '#FF0000',
-      'fill-opacity': 0.2
-    }
-
-    this.addLayer({
-      id: className,
-      type: 'fill',
-      source: 'takamatsu',
-      'source-layer': 'main',
-      paint: {...paintDefault, ...paint},
-      "filter": [
-        "all",
-        [
-          "==",
-          "class",
-          className
-        ],
-      ],
-    }, 'poi');
+    console.log(this.getLayer(className));
+    if (!this.getLayer(className)) { return; }
+    this.setLayoutProperty(className, 'visibility', 'visible');
   }
 
   async loadCSV(url: string) {
