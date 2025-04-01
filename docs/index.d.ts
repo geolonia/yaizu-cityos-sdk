@@ -4,3 +4,11 @@ declare global {
         city: any;
     }
 }
+export type simpleStyle = {
+    'fill'?: string;
+    'stroke'?: string;
+    'marker-color'?: string;
+    'stroke-width': number;
+    'marker-symbol'?: string;
+    'marker-size'?: number;
+};

@@ -7,30 +7,45 @@ import style from './style.json'
 
 declare global {
   interface Window {
-      city: any;
+    city: any;
   }
 }
 
-class TakamatsuMap extends maplibregl.Map {
+const LAYER_TYPES = {
+  point: 'Point',
+  line: 'LineString',
+  polygon: 'Polygon',
+  polygonOutline: 'Polygon-outline',
+  symbol: 'Symbol',
+  label: 'Label',
+};
+
+export type simpleStyle = { 
+  'fill'?: string;
+  'stroke'?: string, 
+  'marker-color'?: string, 
+  'stroke-width': number,
+  'marker-symbol'?: string,
+  'marker-size'?: number
+}
+
+class YaizuMap extends maplibregl.Map {
 
   constructor(params: any) {
 
     const defaults = {
       container: 'map',
       style: style,
-      center: [134.04654783784918, 34.34283588989655],
+      center: [138.29294, 34.84363],
       zoom: 12,
       transformRequest: (url: string, resourceType: string) => {
-
-        if (!window.city.apiKey) {
-          return { url };
-        }
+        if (!window.city.apiKey) { return { url }; }
 
         if ((resourceType === 'Tile' || resourceType === 'Source') && url.startsWith('https://tileserver.geolonia.com')) {
           const updatedUrl = url.replace('YOUR-API-KEY', window.city.apiKey);
-
           return { url: updatedUrl };
         }
+
         return { url };
       }
     }
@@ -38,30 +53,74 @@ class TakamatsuMap extends maplibregl.Map {
     super({...defaults, ...params});
   }
 
-  loadData(className: string, paint: any | undefined | null, layout: any | undefined | null) {
-    const paintDefault = {
-      'fill-color': '#FF0000',
-      'fill-opacity': 0.2
-    }
+  /* **************
+   * データのロード
+   * **************/ 
+  loadData(className: string, options?: simpleStyle) {
+    Object.keys(LAYER_TYPES).forEach((layerType) => {
+      const typedKey = layerType as keyof typeof LAYER_TYPES;
+      const layerId = `${className}-${LAYER_TYPES[typedKey]}`;
 
-    this.addLayer({
-      id: className,
-      type: 'fill',
-      source: 'takamatsu',
-      'source-layer': 'main',
-      paint: {...paintDefault, ...paint},
-      "filter": [
-        "all",
-        [
-          "==",
-          "class",
-          className
-        ],
-      ],
-    }, 'poi');
+      if (!this.getLayer(layerId)) { return; }
+      if (options) {
+        Object.entries(options).forEach(([prop, value]) => {
+          if (!value) { return; }
+          const mappedProp = this.convertStyleProp(typedKey, prop);
+          if(!mappedProp) { return; }
+          this.setPaintProperty(layerId, mappedProp, value);
+        });
+      }
+      this.setLayoutProperty(layerId, 'visibility', 'visible');
+    });
   }
 
-  async loadCSV(url: string) {
+  /* **************
+   * シンプルスタイルを変換
+   * **************/ 
+  private convertStyleProp(geometryType: keyof typeof LAYER_TYPES, prop: string): string | undefined {
+    // "stroke" に対する処理
+    if (prop === 'stroke') {
+      if (geometryType === 'point') {
+        return 'circle-stroke-color';
+      } else if (geometryType === 'line') {
+        return 'line-color';
+      } else if (geometryType === 'polygon' || geometryType === 'polygonOutline') {
+        return 'fill-outline-color';
+      }
+      return undefined;
+    }
+  
+    // "stroke-width" に対する処理
+    if (prop === 'stroke-width') {
+      if (geometryType === 'point') {
+        return 'circle-stroke-width';
+      } else if (geometryType === 'line') {
+        return 'line-width';
+      } else if (geometryType === 'polygon' || geometryType === 'polygonOutline') {
+        return 'fill-outline-width';
+      }
+      return undefined;
+    }
+  
+    // その他のプロパティの変換
+    const mapping: Record<string, { mapped: string, layers: (keyof typeof LAYER_TYPES)[] }> = {
+      'fill':         { mapped: 'fill-color',    layers: ['polygon'] },
+      'marker-color': { mapped: 'icon-color',    layers: ['point'] },
+      'marker-symbol':{ mapped: 'icon-symbol',   layers: ['symbol'] },
+      'marker-size':  { mapped: 'icon-size',     layers: ['symbol'] }
+    };
+    
+    const entry = mapping[prop];
+    if (entry && entry.layers.includes(geometryType)) {
+      return entry.mapped;
+    }
+    return undefined;
+  }
+
+  /* **************
+   * pointデータのcsvをロード
+   * **************/ 
+  async loadPointCSV(url: string, layerName: string, color?: string) {
     // Fetch the csv from the url
     const res = await fetch(url);
     const csv = await res.text();
@@ -79,7 +138,7 @@ class TakamatsuMap extends maplibregl.Map {
         },
         properties: d
       }))
-    }
+    } as GeoJSON.FeatureCollection;
 
     this.addSource(url, {
       type: 'geojson',
@@ -88,12 +147,12 @@ class TakamatsuMap extends maplibregl.Map {
 
     // Add the geojson as layer to the map
     this.addLayer({
-      id: url,
+      id: layerName,
       type: 'circle',
       source: url,
       paint: {
         'circle-radius': 9,
-        'circle-color': '#FF0000',
+        'circle-color': color || '#4169e1',
         'circle-opacity': 0.5,
       }
     }, 'poi');
@@ -104,9 +163,7 @@ class TakamatsuMap extends maplibregl.Map {
       "source": url,
       "layout": {
         'text-field': "{名称}",
-        "text-font": [
-          "Noto Sans CJK JP Bold"
-        ],
+        "text-font": ["NotoSansJP-Regular"],
         'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
         'text-radial-offset': 0.5,
         'text-justify': 'auto',
@@ -128,7 +185,6 @@ const currentScript = document.currentScript as HTMLScriptElement;
 
 window.city = {}
 window.city.apiKey = parseApiKey(currentScript);
-window.city.Takamatsu = maplibregl
-window.city.Takamatsu.Map = TakamatsuMap
-window.city.Takamatsu.Popup = maplibregl.Popup;
-
+window.city.Yaizu = maplibregl
+window.city.Yaizu.Map = YaizuMap
+window.city.Yaizu.Popup = maplibregl.Popup;
