@@ -42,7 +42,7 @@ jobs:
           path: docs
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::762706324393:role/cityos-sdk-deploy-v1
           aws-region: ap-northeast-1
